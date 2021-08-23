@@ -9,48 +9,45 @@ public class Login {
     int userFoundInLine;
     static String fileName = "src/users.txt";
 
-    boolean loggedIn = false;
+    boolean userLogged = false;
     boolean correctPassword = false;
 
     private static Scanner x;
 
     public boolean checkLogin(String inputUser) {
-        if (!loggedIn) {
+     //   System.out.println("login:checklogin:inputuser" + inputUser);
+        if(inputUser.equals("guest")){
+            userLogged = true;
+        } else {
+            if (!userLogged) {
 
-            if(Objects.equals(user, inputUser)){
-                loggedIn= false;
+                if (Objects.equals(user, inputUser)) {
+                    userLogged = false;
 
+                }
             }
         }
-        return loggedIn;
-        /*
-        if(Objects.equals(user, inputUser)){
-            loggedIn = true;
-        }
-        else {
-            loggedIn= false;
-        }
-        return loggedIn;
-
-         */
+        return userLogged;
     }
 
 
-    public boolean passwordEntered() {
+ /*   public boolean passwordEntered() {
+        boolean isPassCorrect = false;
         if(correctPassword) {
-            return true;
+            isPassCorrect = true;
         }
-        return false;
+        return isPassCorrect;
     }
-
-    public boolean alreadyInAccount() {
+*/
+/*    public boolean alreadyInAccount() {
         if(account == ""){
             return false;
         }
         return true;
-    }
+    } */
 
-    public boolean validPassword(String password) {
+  /* public boolean validPassword(String password) {
+
         boolean found = false;
         try {
             String tempPassword = "";
@@ -79,118 +76,55 @@ public class Login {
         }
         return found;
     }
-/*
-    public boolean checkAccount(String account) {
-        //this.account = account;
-        boolean found = false;
-        try {
 
+    */
 
-            String tempAccount = "";
-            Scanner scr = new Scanner(new File(fileName));
-            scr.useDelimiter("[,\n]");
-
-
-            int count = 0;
-            System.out.println("userfound:"+ userFoundInLine);
-            while(count<userFoundInLine) {
-                System.out.println("record:"+ scr.nextLine());
-
-                count++;
-            }
-            scr.next();
-            tempAccount = scr.next();
-            System.out.println("tempAccount:"+tempAccount);
-            scr.next();
-
-            if(tempAccount.trim().equals(account.trim())) {
-                this.account = account;
-                found = true;
-            }
-            scr.close();
-
-        }catch(Exception e) {
-            System.out.println("Error");
-        }
-        return found;
-    }
-*/
-
-
-
-
-
-
-
-  /*  public boolean checkUser(String user) {
-        boolean found = false;
-        boolean guest = false;
-        userFoundInLine = 0;
-        this.user = "";
-        try {
-          Scanner scr = new Scanner(new File(fileName));
-          scr.useDelimiter("[,\n]");
-            while(scr.hasNext() && !found) {
-                String username = scr.next();
-                if(username.equals(user)) {
-                    found = true;
-                    if(username.equals("guest")) {
-                        guest = true;
-                    }
-                }
-                else {
-                    userFoundInLine = userFoundInLine + 1 ;
-                }
-            }
-            if(guest) {
-                this.user = "guest";
-                loggedIn = true;
-            }
-            scr.close();
-
-        }catch(Exception e) {
-            System.out.println("Error");
-        }
-        return found;
-    }*/
 
     public boolean checkUser(String user) {
         boolean found = false;
         boolean guest = false;
+        userLogged = false;
         userFoundInLine = 0;
         this.user = user;
         try {
-            //System.out.println("login:checkuser:try");
+            System.out.println("login:checkuser:try");
             Scanner scr = new Scanner(new File(fileName));
             String userRecord;
             String username;
             String account;
             String password;
 
-           // scr.useDelimiter("[,\n]");
             while(scr.hasNextLine() && !found) {
-                //   scr.useDelimiter("[,\n]");
+           //     System.out.println("login:checkuser:while: ");
                 userRecord= scr.next();
 
                 userFoundInLine = userFoundInLine + 1;
 
                 if (userRecord.equals("guest")&&user.equals("guest")) {
+              //      System.out.println("login:checkuser:while:if");
                     guest = true;
+                    found = true;
+                    this.user = user;
+                    this.account = "";
+                    this.password = "";
                     //loggedIn = true;
                     break;
                 }
                 else {
-                    String [] loginRecord = userRecord.split(",");
-                    username = loginRecord[0];
-                    account  = loginRecord[1];
-                    password = loginRecord[2];
-                    if (username.equals(user)) {
-                        found = true;
-                        this.account = account;
-                        this.password = password;
+                    if (!userRecord.equals("guest")) {
+                 //       System.out.println("login:checkuser:elseif: " + userRecord);
+                        String[] loginRecord = userRecord.split(",");
+                        username = loginRecord[0];
+                        account = loginRecord[1];
+                        password = loginRecord[2];
+                        if (username.equals(user)) {
+                            found = true;
+                            this.account = account;
+                            this.password = password;
 
-                        //loggedIn = true;
-                        break;
+                            //loggedIn = true;
+                            break;
+                        }
                     }
                 }
             }

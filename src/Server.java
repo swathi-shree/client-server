@@ -7,7 +7,7 @@ public class Server {
     private static boolean existsInList = false;
     private static boolean connection = true;
     static Login login = new Login();
-    static boolean loggedIn = false;
+    static boolean userLogged  = false;
 
 
 
@@ -90,11 +90,13 @@ public class Server {
         String username = inputUser.substring(5);
         System.out.println("server:user:inputuser = " + inputUser);
         System.out.println("server:user:username = " + username);
-        loggedIn = false;
+        userLogged  = false;
         if (login.checkUser(username)) {
             // see how to change
+            System.out.println("server:user:if");
             if (login.checkLogin(username)) {
-                loggedIn = true;
+                System.out.println("server:user:if:if");
+                userLogged  = true;
                 System.out.println("!" + username + " logged in");
             } else {
                 System.out.println("+User-id valid, send account and password");
