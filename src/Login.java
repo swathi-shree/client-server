@@ -6,13 +6,13 @@ public class Login {
     static String user;
     static String account = "";
     static String password = "";
-    int userFoundInLine;
+    int userInLine;
     static String fileName = "src/users.txt";
 
     boolean userLogged = false;
-    boolean correctPassword = false;
+  //  boolean correctPassword = false;
 
-    private static Scanner x;
+   // private static Scanner x;
 
     public boolean checkLogin(String inputUser) {
      //   System.out.println("login:checklogin:inputuser" + inputUser);
@@ -23,6 +23,8 @@ public class Login {
 
                 if (Objects.equals(user, inputUser)) {
                     userLogged = false;
+
+
 
                 }
             }
@@ -82,9 +84,9 @@ public class Login {
 
     public boolean checkUser(String user) {
         boolean found = false;
-        boolean guest = false;
+     //   boolean guest = false;
         userLogged = false;
-        userFoundInLine = 0;
+        userInLine = 0;
         this.user = user;
         try {
             System.out.println("login:checkuser:try");
@@ -98,11 +100,11 @@ public class Login {
            //     System.out.println("login:checkuser:while: ");
                 userRecord= scr.next();
 
-                userFoundInLine = userFoundInLine + 1;
+                userInLine = userInLine + 1;
 
                 if (userRecord.equals("guest")&&user.equals("guest")) {
               //      System.out.println("login:checkuser:while:if");
-                    guest = true;
+             //       guest = true;
                     found = true;
                     this.user = user;
                     this.account = "";
