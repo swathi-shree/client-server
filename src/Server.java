@@ -1,8 +1,7 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
+import java.nio.file.*;
 import java.nio.file.attribute.FileOwnerAttributeView;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -15,10 +14,17 @@ public class Server {
     static boolean userLogged = false;
     static String type; // file transfer type A - ascii, B - binary, C - continuous
 
+
+    static String currentDirectory = System.getProperty("user.dir");
+
+    // from NAME
+    static String oldFileName;
+
+
     // new fri
-    private static String args;
-    private static final File defaultDirectory = FileSystems.getDefault().getPath("").toFile().getAbsoluteFile();
-    private static File currentDirectory = defaultDirectory;
+   // private static String args;
+  //  private static final File defaultDirectory = FileSystems.getDefault().getPath("").toFile().getAbsoluteFile();
+ //   private static File currentDirectory = defaultDirectory;
 
 
 
@@ -67,7 +73,7 @@ public class Server {
                     String cmd = msgFromClient.substring(0, 4);
 
 
-                    String currentDirectory = System.getProperty("user.dir");
+                  //  String currentDirectory = System.getProperty("user.dir");
 
 
                     switch (cmd) {
@@ -90,27 +96,34 @@ public class Server {
                             break;
 
                         case "LIST":
-                             LIST(msgFromClient, fileDir,currentDirectory);
+                           //  LIST(msgFromClient, fileDir,currentDirectory);
+                            LIST();
                            // handleList(msgFromClient, currentDirectory);
                             break;
 
                         case "CDIR":
                           System.out.println("CDIR");
-                          CDIR();
+                          CDIR(msgFromClient);
                           break;
 
 
                         case "KILL":
-                            System.out.println("KILL");
+                            KILL(msgFromClient);
+                          //  System.out.println("KILL");
                             break;
 
                         case "NAME":
-                            System.out.println("NAME");
+                            NAME(msgFromClient);
+                          //  System.out.println("NAME");
+                            break;
+
+                        case "TOBE":
+                            TOBE(msgFromClient);
                             break;
 
                         case "RETR":
                             System.out.println("RETR");
-                            RETR();
+                            RETR(msgFromClient);
                             break;
 
 
@@ -240,7 +253,7 @@ public class Server {
         }
     }
 
-  private static void LIST(String inputList, FileDir fileDir, String currentDirectory) throws IOException {
+ /* private static void LIST(String inputList, FileDir fileDir, String currentDirectory) throws IOException {
         if (userLogged) {
             // listing - F or V
             String listing = inputList.substring(5, 6);
@@ -261,21 +274,113 @@ public class Server {
             }
         }
 
+    }*/
+
+// need to do
+    private static void LIST(){}
+
+//need to do
+    private static void CDIR(String inputCDIR) {
+        System.out.println("inside CDIR");
+        String changeDir = inputCDIR.substring(5);
+        String checkNewDir = Paths.get(currentDirectory, changeDir).toString();
+        Path path = Paths.get(checkNewDir);
+        if (userLogged) {
+            if (changeDir.equals("..")) {
+                currentDirectory = new File(System.getProperty("user.dir")).getParentFile().toString();
+                System.out.println("!Changed working dir to " + currentDirectory);
+            } else if (changeDir.equals("/")) {
+                currentDirectory = "C:\\";
+                System.out.println("!Changed working dir to " + path);
+            } else {
+                if (Files.exists(path)) {
+                    currentDirectory = checkNewDir;
+                    System.out.println("!Changed working dir to " + path);
+                } else {
+                    System.out.println("-Can't connect to directory because: directory doesn't exist");
+                }
+            }
+        } else {
+            if (Files.exists(path)) {
+                System.out.println("+directory ok, send account/password");
+            } else {
+                System.out.println("-Can't connect to directory because: directory doesn't exist");
+            }
+        }
     }
 
-    private static void CDIR(){
-        System.out.println("inside CDIR");
-      }
+
+      private static void KILL(String inputKill) {
+        if (userLogged) {
+            try {
+                String delFile = inputKill.substring(5);
+                System.out.println("server:KILL:inputKill:" + delFile);
+                File myFile = new File(currentDirectory.concat("/").concat(delFile));
+                System.out.println("Server:KILL:myFile" + myFile);
+                if (myFile.delete()) {
+                    System.out.println("+" + delFile + " deleted");
+                } else {
+                    System.out.println("-not deleted because no such file");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        else{
+            System.out.println("-not logged in, please login");
+        }
+    }
+
+
+
+    private static void NAME(String inputName) {
+        String filename = inputName.substring(5);
+       // oldFileName = inputName.substring(5);
+        File oldFile = new File(currentDirectory.concat("/").concat(filename));
+       // File oldFile = new File(fileName);
+        if(userLogged){
+            if(oldFile.isFile()){
+                oldFileName = filename;
+                System.out.println("+File exists, send TOBE");
+            } else{
+                System.out.println("-Can't find " + filename + "NAME command is aborted, don't send TOBE");
+            }
+        } else{
+            System.out.println("not logged in, send USER, ACCT and PASS");
+        }
+    }
+
+    private static void TOBE(String inputTOBE) throws IOException {
+        String newFile = inputTOBE.substring(5);
+        if(userLogged){
+            if(newFile.equals("")) {
+                System.out.println("-File wasn't renamed as filename invalid");
+            }
+            else if(newFile.equals(oldFileName)){
+                System.out.println("-File wasn't renamed as new filename same as old filename");
+            }
+            else{
+                Path source = Paths.get(oldFileName);
+                Files.move(source, source.resolveSibling(newFile));
+                System.out.println("+" + oldFileName + " renamed to "+ newFile);
+            }
+        }
+        else{
+            System.out.println("-File wasn't renamed as user not logged in, send USER, ACCT and PASS");
+        }
+    }
+
+    private static void RETR(String inputRETR){
+        System.out.println("inside RETR");
+        System.out.println("file will be returned in the format, type : " +type );
+    }
 
     private static void STOR(){
         System.out.println("inside STOR");
         System.out.println("file will be stored in the format, type : " +type );
     }
 
-    private static void RETR(){
-        System.out.println("inside RETR");
-        System.out.println("file will be returned in the format, type : " +type );
-    }
+
 
 
 
