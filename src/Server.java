@@ -3,7 +3,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.*;
 import java.nio.file.attribute.FileOwnerAttributeView;
+import java.nio.file.attribute.UserPrincipal;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 
 public class Server {
@@ -97,7 +100,7 @@ public class Server {
 
                         case "LIST":
                            //  LIST(msgFromClient, fileDir,currentDirectory);
-                            LIST();
+                            LIST(msgFromClient);
                            // handleList(msgFromClient, currentDirectory);
                             break;
 
@@ -276,29 +279,92 @@ public class Server {
 
     }*/
 
-// need to do
-    private static void LIST(){}
+// need to do - CRLF
+    private static void LIST(String inputList) throws IOException {
+        if (userLogged) {
+            // F or V
+            String listing = inputList.substring(5,6);
+            System.out.println("listing:" + listing);
+            // add to directory path e.g. test, src
+            String dirPath = inputList.substring(6).trim();
+
+            File directory = new File(currentDirectory.concat("/").concat(dirPath));
+            System.out.println("directory:" + directory);
+
+            if(dirPath.equals("")){
+                System.out.println("+ current connected directory " +currentDirectory);
+            }
+            else if(!directory.exists()){
+                System.out.println("- directory does not exist ");
+            }
+            else {
+                if (listing.equals("F")) {
+                    System.out.println("+" + directory);
+                    File[] listOfFiles = directory.listFiles();
+
+                    for (int i = 0; i < listOfFiles.length; i++) {
+                        System.out.println(listOfFiles[i].getName());
+                    }
+
+                } else if (listing.equals("V")) {
+                    System.out.println("V works");
+                    File[] files = directory.listFiles();
+                    if (files.length == 0) {
+                        System.out.println("The directory is empty");
+                    } else {
+                        System.out.println("number of files in this directory: " + files.length);
+
+                        for (File aFile : files) {
+                            Date date = Calendar.getInstance().getTime();
+                           // SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy kk:mm");
+                            DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+                            String strDate = dateFormat.format(date);
+                            long modifiedTime = aFile.lastModified();
+                            String modifiedDate = dateFormat.format(new Date(modifiedTime));
+
+                           UserPrincipal owner = Files.getOwner(aFile.toPath());
+
+                           System.out.println("filename: "+ aFile.getName() + " filesize: " + aFile.length() + " file protection: "+ " last write date: "+ modifiedDate+ " last modified: " + "owner: " +owner);
+                        }
+
+                    }
+
+                } else {
+                    System.out.println("- invalid format, type F or V");
+                }
+            }
+        }
+        else{
+            System.out.println("please login");
+        }
+    }
 
 //need to do
     private static void CDIR(String inputCDIR) {
-        System.out.println("inside CDIR");
-        String changeDir = inputCDIR.substring(5);
-        String checkNewDir = Paths.get(currentDirectory, changeDir).toString();
-        Path path = Paths.get(checkNewDir);
+        System.out.println("inside CDIR : " + inputCDIR);
+        String changeToDir = inputCDIR.substring(5);
+        String finalDir = Paths.get(currentDirectory, changeToDir).toString();
+        Path path = Paths.get(finalDir);
         if (userLogged) {
-            if (changeDir.equals("..")) {
-                currentDirectory = new File(System.getProperty("user.dir")).getParentFile().toString();
-                System.out.println("!Changed working dir to " + currentDirectory);
-            } else if (changeDir.equals("/")) {
-                currentDirectory = "C:\\";
-                System.out.println("!Changed working dir to " + path);
-            } else {
-                if (Files.exists(path)) {
-                    currentDirectory = checkNewDir;
+
+            switch(changeToDir){
+                case "..":
+                    currentDirectory = new File(currentDirectory).getParentFile().toString();
+                    System.out.println("!Changed working dir to " + currentDirectory);
+                    break;
+                case "/":
+                    currentDirectory = "C:\\";
                     System.out.println("!Changed working dir to " + path);
-                } else {
-                    System.out.println("-Can't connect to directory because: directory doesn't exist");
-                }
+                    break;
+                default:
+                    if (Files.exists(path)) {
+                        currentDirectory = finalDir;
+                        System.out.println("!Changed working dir to " + path);
+                    } else {
+                        System.out.println("-Can't connect to directory because: directory doesn't exist");
+                    }
+                    break;
+
             }
         } else {
             if (Files.exists(path)) {
@@ -310,15 +376,15 @@ public class Server {
     }
 
 
-      private static void KILL(String inputKill) {
+      private static void KILL(String inputFile) {
         if (userLogged) {
             try {
-                String delFile = inputKill.substring(5);
-                System.out.println("server:KILL:inputKill:" + delFile);
-                File myFile = new File(currentDirectory.concat("/").concat(delFile));
-                System.out.println("Server:KILL:myFile" + myFile);
-                if (myFile.delete()) {
-                    System.out.println("+" + delFile + " deleted");
+                String fileName = inputFile.substring(5);
+                System.out.println("server:KILL:inputFile : " + fileName);
+                File thisFile = new File(currentDirectory.concat("/").concat(fileName));
+                System.out.println("Server:KILL:thisFile " + thisFile);
+                if (thisFile.delete()) {
+                    System.out.println("+" + thisFile + " deleted");
                 } else {
                     System.out.println("-not deleted because no such file");
                 }
