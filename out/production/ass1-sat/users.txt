@@ -1,4 +1,4 @@
 guest
-harry,aut,pass2
-swathi,uoa,pass
+harry,aut,pass
+jane,uoa,pass2
 bob,massey,pass3

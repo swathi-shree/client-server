@@ -13,9 +13,11 @@ public class Server {
     //  private static boolean existsInList = false;
     //private static boolean connection = false;
     static Login login = new Login();
-    static FileDir fileDir = new FileDir();
+   // static FileDir fileDir = new FileDir();
     static boolean userLogged = false;
     static String type; // file transfer type A - ascii, B - binary, C - continuous
+
+    static boolean isAcc = false;
 
 
     static String currentDirectory = System.getProperty("user.dir");
@@ -41,6 +43,10 @@ public class Server {
 
         // this port number must match the port number the client is using
         ServerSocket serverSocket = new ServerSocket(1234);
+
+
+
+
         boolean connected = true;
         if(serverSocket.isBound()){
             System.out.println("+COMPSYS725 SFTP Service");
@@ -52,6 +58,11 @@ public class Server {
         //binding client
         clientSocket = serverSocket.accept();
         boolean listeningClient = true;
+
+
+
+       // for send
+        OutputStream out = clientSocket.getOutputStream();
 
 
         // first while loop is to accept client connection
@@ -129,6 +140,11 @@ public class Server {
                             RETR(msgFromClient);
                             break;
 
+                        case "SEND":
+                            System.out.println("SEND");
+                            SEND(msgFromClient);
+                            break;
+
 
                         case "STOR":
                             System.out.println("STOR");
@@ -145,7 +161,7 @@ public class Server {
 
 
                         default:
-                            System.out.println("Unknown option");
+                            System.out.println("Unknown option. Please enter a valid command");
 
                     }
                     bufferedWriter.write("MSG Received");
@@ -213,6 +229,9 @@ public class Server {
         //System.out.println("Server.ACCT.Account:" + account);
 
         if (login.account.equals(account)) {
+
+            isAcc = true;
+
             System.out.println("+Account valid, send password");
         } else {
             System.out.println("-Invalid account, try again");
@@ -228,10 +247,14 @@ public class Server {
         //System.out.println("Server.ACCT.username:" + username);
         //System.out.println("Server.ACCT.Account:" + account);
 
-        if (login.password.equals(password)) {
-            System.out.println("! Logged in Password is ok and you can begin file transfers.");
-            userLogged = true;
-            System.out.println("server:pass:userlogged " + userLogged);
+        if (login.password.equals(password)){
+            if(isAcc==true) {
+                System.out.println("! Logged in Password is ok and you can begin file transfers.");
+                userLogged = true;
+              //  System.out.println("server:pass:userlogged " + userLogged);
+            } else {
+                System.out.println("+Password Valid, send account ");
+            }
 
         } else {
             System.out.println("-Wrong password, try again");
@@ -256,30 +279,6 @@ public class Server {
         }
     }
 
- /* private static void LIST(String inputList, FileDir fileDir, String currentDirectory) throws IOException {
-        if (userLogged) {
-            // listing - F or V
-            String listing = inputList.substring(5, 6);
-
-          //  FileDir fileDir;
-
-            String dir = currentDirectory + "\\" + inputList.substring(6).trim();
-            if (listing.contentEquals("F")) {
-                String toPrint = fileDir.listFiles(dir, "F");
-               // System.out.println("F works");
-                System.out.println(toPrint);
-            } else if (listing.contentEquals("V")) {
-                String toPrint =  fileDir.listFiles(dir, "V");
-               // System.out.println("V works");
-                System.out.println(toPrint);
-            } else {
-                System.out.println("login");
-            }
-        }
-
-    }*/
-
-// need to do - CRLF
     private static void LIST(String inputList) throws IOException {
         if (userLogged) {
             // F or V
@@ -335,16 +334,17 @@ public class Server {
             }
         }
         else{
-            System.out.println("please login");
+            System.out.println("Please login to continue");
         }
     }
 
 //need to do
     private static void CDIR(String inputCDIR) {
-        System.out.println("inside CDIR : " + inputCDIR);
         String changeToDir = inputCDIR.substring(5);
-        String finalDir = Paths.get(currentDirectory, changeToDir).toString();
-        Path path = Paths.get(finalDir);
+    //    String finalDir = Paths.get(currentDirectory, changeToDir).toString();
+    //    Path path = Paths.get(finalDir);
+
+        File finalDir = new File(currentDirectory.concat("/").concat(changeToDir));
         if (userLogged) {
 
             switch(changeToDir){
@@ -352,14 +352,16 @@ public class Server {
                     currentDirectory = new File(currentDirectory).getParentFile().toString();
                     System.out.println("!Changed working dir to " + currentDirectory);
                     break;
-                case "/":
+             /*   case "/":
                     currentDirectory = "C:\\";
-                    System.out.println("!Changed working dir to " + path);
-                    break;
+                    System.out.println("!Changed working dir to " + currentDirectory);
+                    break;*/
                 default:
-                    if (Files.exists(path)) {
-                        currentDirectory = finalDir;
-                        System.out.println("!Changed working dir to " + path);
+                    currentDirectory = finalDir.toString();
+                    System.out.println("finalDir.toString" + currentDirectory);
+                    if (finalDir.isDirectory()) {
+                        currentDirectory = finalDir.toString();
+                        System.out.println("!Changed working dir to " + currentDirectory);
                     } else {
                         System.out.println("-Can't connect to directory because: directory doesn't exist");
                     }
@@ -367,7 +369,7 @@ public class Server {
 
             }
         } else {
-            if (Files.exists(path)) {
+            if (finalDir.isDirectory()) {
                 System.out.println("+directory ok, send account/password");
             } else {
                 System.out.println("-Can't connect to directory because: directory doesn't exist");
@@ -393,7 +395,7 @@ public class Server {
             }
         }
         else{
-            System.out.println("-not logged in, please login");
+            System.out.println("-Please login to continue");
         }
     }
 
@@ -412,7 +414,7 @@ public class Server {
                 System.out.println("-Can't find " + filename + "NAME command is aborted, don't send TOBE");
             }
         } else{
-            System.out.println("not logged in, send USER, ACCT and PASS");
+            System.out.println("Please login to continue");
         }
     }
 
@@ -432,13 +434,33 @@ public class Server {
             }
         }
         else{
-            System.out.println("-File wasn't renamed as user not logged in, send USER, ACCT and PASS");
+            System.out.println("-File wasn't renamed as user not logged in. Please login to continue");
         }
     }
 
-    private static void RETR(String inputRETR){
-        System.out.println("inside RETR");
-        System.out.println("file will be returned in the format, type : " +type );
+    private static void RETR(String inputFile) {
+
+        if (userLogged) {
+            String retrFile = inputFile.substring(5);
+            File file = new File(currentDirectory.concat("/").concat(retrFile));
+            if (file.exists()) {
+                long ascii = file.length();
+                System.out.println("bytes: " + ascii);
+
+
+            } else {
+                System.out.println("-File doesn't exist");
+            }
+
+            System.out.println("inside RETR");
+            System.out.println("file will be returned in the format, type : " + type);
+        }
+    }
+
+    private static void SEND(String toClient) {
+
+        File fileSend = new File(toClient);
+
     }
 
     private static void STOR(){
