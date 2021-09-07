@@ -9,7 +9,7 @@ ID: 623079095
 ## File Structure
 The file structure of this project is as follows:
 
-- ass1-sat-src
+- cs725
   - src
     - Server.java
     - Client.java
