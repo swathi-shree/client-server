@@ -1,4 +1,5 @@
 import java.io.*;
+import java.lang.reflect.Array;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.*;
@@ -10,10 +11,8 @@ import java.util.Calendar;
 import java.util.Date;
 
 public class Server {
-    //  private static boolean existsInList = false;
-    //private static boolean connection = false;
+
     static Login login = new Login();
-   // static FileDir fileDir = new FileDir();
     static boolean userLogged = false;
     static String type; // file transfer type A - ascii, B - binary, C - continuous
 
@@ -25,13 +24,11 @@ public class Server {
     // from NAME
     static String oldFileName;
 
+    // from RETR
+    static String filePath;
+    static OutputStream outputStream;
 
-    // new fri
-   // private static String args;
-  //  private static final File defaultDirectory = FileSystems.getDefault().getPath("").toFile().getAbsoluteFile();
- //   private static File currentDirectory = defaultDirectory;
-
-
+    static String sendReplyToClient;
 
 
     public static void main(String[] args) throws IOException {
@@ -75,19 +72,14 @@ public class Server {
                 bufferedReader = new BufferedReader(inputStreamReader);
                 bufferedWriter = new BufferedWriter(outputStreamWriter);
 
-
-
                 // second while loop to constantly send messages
                 while (listeningClient) {
-                    System.out.println("Server:while:listening");
+                   // System.out.println("Server:while:listening");
                     // user input
                     String msgFromClient = bufferedReader.readLine();
                     // System.out.println("Client: " + msgFromClient);
                     // USER,ACCT,PASS etc..
                     String cmd = msgFromClient.substring(0, 4);
-
-
-                  //  String currentDirectory = System.getProperty("user.dir");
 
 
                     switch (cmd) {
@@ -96,12 +88,12 @@ public class Server {
                             break;
 
                         case "ACCT":
-                            System.out.println("Checking: " + msgFromClient);
+                         //   System.out.println("Checking: " + msgFromClient);
                             ACCT(msgFromClient);
                             break;
 
                         case "PASS":
-                            System.out.println("Checking pass:" + msgFromClient);
+                         //   System.out.println("Checking pass:" + msgFromClient);
                             PASS(msgFromClient);
                             break;
 
@@ -110,78 +102,67 @@ public class Server {
                             break;
 
                         case "LIST":
-                           //  LIST(msgFromClient, fileDir,currentDirectory);
                             LIST(msgFromClient);
-                           // handleList(msgFromClient, currentDirectory);
                             break;
 
                         case "CDIR":
-                          System.out.println("CDIR");
                           CDIR(msgFromClient);
                           break;
 
-
                         case "KILL":
                             KILL(msgFromClient);
-                          //  System.out.println("KILL");
                             break;
 
                         case "NAME":
                             NAME(msgFromClient);
-                          //  System.out.println("NAME");
                             break;
 
                         case "TOBE":
                             TOBE(msgFromClient);
                             break;
 
+
+                    /*    RETR, SEND not complete
                         case "RETR":
-                            System.out.println("RETR");
-                            RETR(msgFromClient);
+                          //  System.out.println("RETR");
+                          //  RETR(msgFromClient);
                             break;
 
                         case "SEND":
-                            System.out.println("SEND");
+                         //   System.out.println("SEND");
                             SEND(msgFromClient);
                             break;
 
 
-                        case "STOR":
-                            System.out.println("STOR");
-                            STOR();
-                            break;
+                     */
 
                         case "DONE":
-                            System.out.println("DONE");
-                                System.out.println(login.user + " + while: closing connection ");
+                          //  System.out.println("DONE");
+                             //   System.out.println(login.user + " + while: closing connection ");
+                                sendReplyToClient = "+closing connection ";
                                 listeningClient = false;
                                 break;
 
-
-
-
                         default:
-                            System.out.println("Unknown option. Please enter a valid command");
+                            sendReplyToClient = "Unknown option. Please enter a valid command";
+                            System.out.println(sendReplyToClient);
 
                     }
-                    bufferedWriter.write("MSG Received");
+                   // System.out.println("Server:1000: Length " + sendReplyToClient.length());
+                    bufferedWriter.write(sendReplyToClient);
                     bufferedWriter.newLine();
                     bufferedWriter.flush();
 
-                    // not working - client side working.. server side not closing
                      if (msgFromClient.equalsIgnoreCase("DONE")) {
-                        System.out.println(login.user +" + closing connection ");
+                     //   System.out.println(login.user +" + closing connection ");
                         connected = false;
                         break;
                     }
                 }
 
             } catch (Exception e) {
-                e.printStackTrace();
+              e.printStackTrace();
             }
-
-
-
             inputStreamReader.close();
             outputStreamWriter.close();
             bufferedReader.close();
@@ -191,34 +172,40 @@ public class Server {
         }
 
         if(serverSocket.isClosed()){
+          //  sendReplyToClient = "-COMPSYS725 Out to Lunch";
             System.out.println("-COMPSYS725 Out to Lunch");
+            System.out.println(sendReplyToClient);
 
         } else {
-
+          //  sendReplyToClient = "+COMPSYS725 SFTP Service";
             System.out.println("+COMPSYS725 SFTP Service");
+           // System.out.println(sendReplyToClient);
         }
 
     }
 
 
     private static void USER(String inputUser) {
+
         String username = inputUser.substring(5);
-        System.out.println("server:user:inputuser = " + inputUser);
-        System.out.println("server:user:username = " + username);
+    //    System.out.println("server:user:inputuser = " + inputUser);
+    //    System.out.println("server:user:username = " + username);
         userLogged = false;
         if (login.checkUser(username)) {
-            // see how to change
-            System.out.println("server:user:if");
+        //    System.out.println("server:user:if");
             if (login.checkLogin(username)) {
-                System.out.println("server:user:if:if");
+            //    System.out.println("server:user:if:if");
                 userLogged = true;
-                System.out.println("!" + username + " logged in");
+                sendReplyToClient = "!" + username + " logged in";
+
             } else {
-                System.out.println("+User-id valid, send account and password");
+                sendReplyToClient = "+User-id valid, send account and password";
             }
         } else {
-            System.out.println("-Invalid user-id, try again");
+            sendReplyToClient = "-Invalid user-id, try again";
         }
+      //  System.out.println(sendReplyToClient);
+
     }
 
     private static void ACCT(String inputAcct) {
@@ -232,11 +219,11 @@ public class Server {
 
             isAcc = true;
 
-            System.out.println("+Account valid, send password");
+            sendReplyToClient ="+Account valid, send password";
         } else {
-            System.out.println("-Invalid account, try again");
+            sendReplyToClient = "-Invalid account, try again";
         }
-
+      //  System.out.println(sendReplyToClient);
     }
 
     private static void PASS(String inputPass) {
@@ -249,132 +236,144 @@ public class Server {
 
         if (login.password.equals(password)){
             if(isAcc==true) {
-                System.out.println("! Logged in Password is ok and you can begin file transfers.");
+                sendReplyToClient ="! Logged in Password is ok and you can begin file transfers.";
                 userLogged = true;
               //  System.out.println("server:pass:userlogged " + userLogged);
             } else {
-                System.out.println("+Password Valid, send account ");
+                sendReplyToClient = "+Password Valid, send account ";
             }
 
         } else {
-            System.out.println("-Wrong password, try again");
+            sendReplyToClient = "-Wrong password, try again";
         }
+      //  System.out.println(sendReplyToClient);
     }
 
     private static void TYPE(String inputType) {
          type = inputType.substring(5);
         if (userLogged) {
             if (type.equals("A")) {
-                System.out.println("+Using Ascii mode");
+                sendReplyToClient ="+Using Ascii mode";
             } else if (type.equals("B")) {
-                System.out.println(" +Using Binary mode");
+                sendReplyToClient =" +Using Binary mode";
             } else if (type.equals("C")) {
-                System.out.println("+Using Continuous mode");
+                sendReplyToClient ="+Using Continuous mode";
             } else {
-                System.out.println("-Type not valid");
+                sendReplyToClient ="-Type not valid";
             }
 
         } else {
-            System.out.println("Please login to continue");
+            sendReplyToClient ="Please login to continue";
         }
+      //  System.out.println(sendReplyToClient);
     }
 
-    private static void LIST(String inputList) throws IOException {
+    private static void LIST(String inputList) throws Exception {
+
         if (userLogged) {
             // F or V
             String listing = inputList.substring(5,6);
-            System.out.println("listing:" + listing);
+          //  System.out.println("listing:" + listing);
             // add to directory path e.g. test, src
             String dirPath = inputList.substring(6).trim();
 
             File directory = new File(currentDirectory.concat("/").concat(dirPath));
-            System.out.println("directory:" + directory);
+         //   System.out.println("directory:" + directory);
 
-            if(dirPath.equals("")){
-                System.out.println("+ current connected directory " +currentDirectory);
-            }
-            else if(!directory.exists()){
-                System.out.println("- directory does not exist ");
-            }
-            else {
-                if (listing.equals("F")) {
-                    System.out.println("+" + directory);
-                    File[] listOfFiles = directory.listFiles();
+            if(directory.exists()){
+                sendReplyToClient = "+ current connected directory: " + directory + "<CRLF>"; //currentDirectory;
 
-                    for (int i = 0; i < listOfFiles.length; i++) {
-                        System.out.println(listOfFiles[i].getName());
-                    }
+                switch(listing) {
+                    case "F":
+                        File[] listOfFiles = directory.listFiles();
 
-                } else if (listing.equals("V")) {
-                    System.out.println("V works");
-                    File[] files = directory.listFiles();
-                    if (files.length == 0) {
-                        System.out.println("The directory is empty");
-                    } else {
-                        System.out.println("number of files in this directory: " + files.length);
+                        for (int i = 0; i < listOfFiles.length; i++) {
+                            // append list of files
+                            sendReplyToClient += listOfFiles[i].getName() + "<CRLF>";
+                            //System.out.println("Server:List:F: " + sendReplyToClient);
+                            //System.out.println("Server:List:F:expect list: " + listOfFiles[i].getName());
+                        }
+                        break;
 
+                    case "V":
+                      //  System.out.println("V works");
+                        File[] files = directory.listFiles();
                         for (File aFile : files) {
                             Date date = Calendar.getInstance().getTime();
-                           // SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy kk:mm");
                             DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
                             String strDate = dateFormat.format(date);
                             long modifiedTime = aFile.lastModified();
                             String modifiedDate = dateFormat.format(new Date(modifiedTime));
+                            UserPrincipal owner = Files.getOwner(aFile.toPath());
 
-                           UserPrincipal owner = Files.getOwner(aFile.toPath());
-
-                           System.out.println("filename: "+ aFile.getName() + " filesize: " + aFile.length() + " file protection: "+ " last write date: "+ modifiedDate+ " last modified: " + "owner: " +owner);
+                            sendReplyToClient += "filename: "+ aFile.getName() + "   filesize: " + aFile.length() + "   last write date: "+ modifiedDate + "   owner: " +owner + "<CRLF>";
                         }
+                        break;
 
-                    }
+                    default:
+                        sendReplyToClient = "- invalid format, type F or V";
 
-                } else {
-                    System.out.println("- invalid format, type F or V");
                 }
+            }  else {
+                sendReplyToClient = "- directory does not exist";
             }
+        } else {
+            sendReplyToClient = "Please login to continue";
         }
-        else{
-            System.out.println("Please login to continue");
-        }
+      //  System.out.println(sendReplyToClient);
     }
 
-//need to do
+
+
     private static void CDIR(String inputCDIR) {
         String changeToDir = inputCDIR.substring(5);
-    //    String finalDir = Paths.get(currentDirectory, changeToDir).toString();
-    //    Path path = Paths.get(finalDir);
-
         File finalDir = new File(currentDirectory.concat("/").concat(changeToDir));
         if (userLogged) {
 
-            switch(changeToDir){
-                case "..":
-                    currentDirectory = new File(currentDirectory).getParentFile().toString();
-                    System.out.println("!Changed working dir to " + currentDirectory);
-                    break;
-             /*   case "/":
-                    currentDirectory = "C:\\";
-                    System.out.println("!Changed working dir to " + currentDirectory);
-                    break;*/
-                default:
-                    currentDirectory = finalDir.toString();
-                    System.out.println("finalDir.toString" + currentDirectory);
-                    if (finalDir.isDirectory()) {
-                        currentDirectory = finalDir.toString();
-                        System.out.println("!Changed working dir to " + currentDirectory);
-                    } else {
-                        System.out.println("-Can't connect to directory because: directory doesn't exist");
-                    }
-                    break;
+            if(finalDir.isDirectory()) {
+                switch (changeToDir) {
+                    // go back one level
+                    case "..":
+                        currentDirectory = new File(currentDirectory).getParentFile().toString();
+                        // System.out.println("!Changed working dir to " + currentDirectory);
+                        sendReplyToClient = "!Changed working dir to " + currentDirectory;
+                        break;
+                    case "~":
+                        currentDirectory = System.getProperty("user.dir");
+                        sendReplyToClient = "!Changed to root dir: " + currentDirectory;
+                        break;
 
+                    default:
+                        // currentDirectory = finalDir.toString();
+                        // System.out.println("finalDir.toString" + currentDirectory);
+                        if (finalDir.isDirectory()) {
+                            currentDirectory = finalDir.toString();
+                            //  System.out.println("!Changed working dir to " + currentDirectory);
+                            sendReplyToClient = "!Changed working dir to " + currentDirectory;
+                        } else {
+                            // System.out.println("-Can't connect to directory because: directory doesn't exist");
+                            sendReplyToClient = "-Can't connect to directory because: directory doesn't exist";
+                        }
+                        break;
+
+                }
             }
+            else {
+                sendReplyToClient = "-Can't connect to directory because: directory doesn't exist";
+                }
+
         } else {
             if (finalDir.isDirectory()) {
-                System.out.println("+directory ok, send account/password");
+              //  System.out.println("not logged in: directory: " + currentDirectory);
+                sendReplyToClient = "+directory ok, send account/password";
             } else {
-                System.out.println("-Can't connect to directory because: directory doesn't exist");
+                sendReplyToClient = "-Can't connect to directory because: directory doesn't exist";
+               // System.out.println("-Can't connect to directory because: directory doesn't exist");
             }
         }
+
+    //   System.out.println(sendReplyToClient);
+
     }
 
 
@@ -382,94 +381,121 @@ public class Server {
         if (userLogged) {
             try {
                 String fileName = inputFile.substring(5);
-                System.out.println("server:KILL:inputFile : " + fileName);
+              //  System.out.println("server:KILL:inputFile : " + fileName);
                 File thisFile = new File(currentDirectory.concat("/").concat(fileName));
-                System.out.println("Server:KILL:thisFile " + thisFile);
+               // System.out.println("Server:KILL:thisFile " + thisFile);
                 if (thisFile.delete()) {
-                    System.out.println("+" + thisFile + " deleted");
+                    sendReplyToClient = "+" + thisFile + " deleted";
                 } else {
-                    System.out.println("-not deleted because no such file");
+                    sendReplyToClient = "-not deleted because no such file";
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         else{
-            System.out.println("-Please login to continue");
+            sendReplyToClient = "-Please login to continue";
         }
+      //  System.out.println(sendReplyToClient);
     }
 
 
 
     private static void NAME(String inputName) {
         String filename = inputName.substring(5);
-       // oldFileName = inputName.substring(5);
         File oldFile = new File(currentDirectory.concat("/").concat(filename));
-       // File oldFile = new File(fileName);
         if(userLogged){
             if(oldFile.isFile()){
                 oldFileName = filename;
-                System.out.println("+File exists, send TOBE");
+                sendReplyToClient = "+File exists, send TOBE";
             } else{
-                System.out.println("-Can't find " + filename + "NAME command is aborted, don't send TOBE");
+                sendReplyToClient = "-Can't find " + filename + " ,NAME command is aborted, don't send TOBE";
             }
         } else{
-            System.out.println("Please login to continue");
+            sendReplyToClient = "Please login to continue";
         }
+      //  System.out.println(sendReplyToClient);
     }
 
     private static void TOBE(String inputTOBE) throws IOException {
         String newFile = inputTOBE.substring(5);
         if(userLogged){
             if(newFile.equals("")) {
-                System.out.println("-File wasn't renamed as filename invalid");
+              //  System.out.println("-File wasn't renamed as filename invalid");
+                sendReplyToClient = "-File wasn't renamed as filename invalid";
             }
             else if(newFile.equals(oldFileName)){
-                System.out.println("-File wasn't renamed as new filename same as old filename");
+              //  System.out.println("-File wasn't renamed as new filename same as old filename");
+                sendReplyToClient = "-File wasn't renamed as new filename same as old filename";
             }
             else{
-                Path source = Paths.get(oldFileName);
+                Path source = Paths.get(currentDirectory,oldFileName);
                 Files.move(source, source.resolveSibling(newFile));
-                System.out.println("+" + oldFileName + " renamed to "+ newFile);
+                sendReplyToClient = "+" + oldFileName + " renamed to "+ newFile;
+             //   System.out.println("+" + oldFileName + " renamed to "+ newFile);
+
             }
         }
         else{
-            System.out.println("-File wasn't renamed as user not logged in. Please login to continue");
+            sendReplyToClient = "-File wasn't renamed as user not logged in. Please login to continue";
         }
+
+     //   System.out.println(sendReplyToClient);
     }
 
-    private static void RETR(String inputFile) {
+
+
+// RETR, SEND, STOR commands //
+
+  /*
+
+   private static void RETR(String inputFile) {
+
+        System.out.println("inside RETR");
+        System.out.println("file will be returned in the format, type : " + type);
 
         if (userLogged) {
             String retrFile = inputFile.substring(5);
             File file = new File(currentDirectory.concat("/").concat(retrFile));
+             System.out.println("file: " + file);
+             System.out.println("filePath: " + filePath);
             if (file.exists()) {
                 long ascii = file.length();
                 System.out.println("bytes: " + ascii);
-
-
+                filePath = (String.valueOf(new File(currentDirectory.concat("/").concat(retrFile))));
             } else {
                 System.out.println("-File doesn't exist");
             }
-
-            System.out.println("inside RETR");
-            System.out.println("file will be returned in the format, type : " + type);
         }
-    }
+        else{
+            System.out.println("-Not logged in, can't retrieve file");
+        }
 
-    private static void SEND(String toClient) {
+    }*/
 
-        File fileSend = new File(toClient);
+ /*   private static void SEND(String toClient) throws IOException {
+      //  file
+      //  File fileSend = new File(toClient);
 
-    }
+        byte[] content = Files.readAllBytes(Path.of(filePath));
+        outputStream.write(content);
+        outputStream.flush();
+        System.out.println("file saved on client");
 
-    private static void STOR(){
+
+    }*/
+
+  /*  private static void STOR(String inputCommand){
+        //NEW,OLD,APP
+        String command = inputCommand.substring(5,8);
+        String fileName = inputCommand.substring(9);
+        File file = new File(currentDirectory.concat("/").concat(fileName));
+        System.out.println("file in STOR: " + file);
+
         System.out.println("inside STOR");
         System.out.println("file will be stored in the format, type : " +type );
     }
-
-
-
+*/
 
 
 

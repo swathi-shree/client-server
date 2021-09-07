@@ -1,90 +1,129 @@
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
 public class Client {
 
     static String cType;
-   // static Socket socket = null;
-    static DataOutputStream dataOutputStream = null;
+
+    // for SEND client
+    static DataOutputStream dataOutputStream;
     static String retrievedFile;
+    static int receivedFileSize;
+
+    // for STOR
+    static String fileToChange;
+
+    private static BufferedReader inFromServer;
+
+
+
     public static void main (String[] args){
         Socket socket = null;
         InputStreamReader inputStreamReader = null;
-        OutputStreamWriter outputStreamWriter = null;
+       OutputStreamWriter outputStreamWriter = null;
+
+
         // improve efficiency using buffers
         BufferedReader bufferedReader = null;
         BufferedWriter bufferedWriter = null;
-     //   DataOutputStream dataOutputStream = null;
+
 
         try{
             socket = new Socket("localhost", 1234);
+
             inputStreamReader = new InputStreamReader(socket.getInputStream());
             outputStreamWriter = new OutputStreamWriter(socket.getOutputStream());
-
             bufferedReader = new BufferedReader(inputStreamReader);
             bufferedWriter = new BufferedWriter(outputStreamWriter);
 
             Scanner scanner = new Scanner(System.in);
 
-
             while(true) {
                 String msgToSend = scanner.nextLine();
+             //   System.out.println("Before MSG send");
                 bufferedWriter.write(msgToSend);
                 bufferedWriter.newLine();
-                // flushes the stream to improve I/O performance
                 bufferedWriter.flush();
 
-                System.out.println("Server:" + bufferedReader.readLine());
-                System.out.println("MSGtoSend:" + msgToSend);
+
+
+         //  System.out.println("After MSG send");
+
+
 
                 String clientCmd = msgToSend.substring(0, 4);
+                if(clientCmd.equals("LIST")) {
+                    String[] fileList = bufferedReader.readLine().split("<CRLF>");
+                    for (String file: fileList){
+                        System.out.println(file);
+                    }
+                }
+                else {
+                    System.out.println("Reply from Server : " + bufferedReader.readLine());
+                }
                 switch (clientCmd){
 
+                 /*
                     case "TYPE":
                         dataOutputStream.writeBytes(msgToSend);
                         // client's side of file type (A,B,C)
                         cType = msgToSend.substring(5);
                         break;
 
+
                     case "SEND":
-                        clientSEND(msgToSend);
-                        System.out.println("print client cmd: " + clientCmd);
+                        clientSEND();
+                      //  System.out.println("print client cmd: " + clientCmd);
                         break;
+
+                    case "STOR":
+                        //clientSTOR(msgToSend);
+                        break;
+
+
+                  */
+
+
                 }
 
 
                 if (msgToSend.equalsIgnoreCase("DONE")) {
-                    System.out.println("Client:if:");
+                 //   System.out.println("+closing connection ");
                     socket.close();
                     break;
+
                 }
+
             }
 
         } catch (IOException e) {
             e.printStackTrace();
+
+
         } finally {
             try{
-                System.out.println("Client:finally");
+            //    System.out.println("Client:finally");
                 if(socket!=null) {
-                    System.out.println("Client:finally:socket");
+                  //  System.out.println("Client:finally:socket");
                     socket.close();
                 }
                 if(inputStreamReader != null) {
-                    System.out.println("Client:finally:inputstreamreader");
+                  //  System.out.println("Client:finally:inputstreamreader");
                     inputStreamReader.close();
                 }
                 if(outputStreamWriter != null) {
-                    System.out.println("Client:finally:outputstreamwriter");
+                 //   System.out.println("Client:finally:outputstreamwriter");
                     outputStreamWriter.close();
                 }
                 if(bufferedReader != null) {
-                    System.out.println("Client:finally:bufferedreader");
+                 //   System.out.println("Client:finally:bufferedreader");
                     bufferedReader.close();
                 }
                 if(bufferedWriter != null) {
-                    System.out.println("Client:finally:bufferedwriter");
+                  //  System.out.println("Client:finally:bufferedwriter");
                     bufferedWriter.close();
                 }
             } catch (IOException e) {
@@ -94,33 +133,5 @@ public class Client {
     }
 
 
-  /*  private static void clientTYPE(String msgToSend) {
-        // client's side of file type (A,B,C)
-        String cType = msgToSend.substring(5);
-
-    }
-*/
-  private static void clientRETR(String msgToSend){
-
-  }
-
-    private static void clientSEND(String msgToSend) throws IOException {
-
-        dataOutputStream.writeBytes(msgToSend);
-        dataOutputStream.flush();
-
-    }
-
-
 }
 
-
-                 /*   case "RETR":
-                        retrievedFile = msgToSend.substring(5);
-                        receivedFileSize = Integer.parseInt(r);
-                        long totalFreeSpace =  new File("c:").getFreeSpace() ;
-                        if(totalFreeSpace < receivedFileSize) {
-                            msgToSend = "STOP";
-                            dataOutputStream.writeBytes(msgToSend);
-                            dataOutputStream.flush();
-                            break;*/
